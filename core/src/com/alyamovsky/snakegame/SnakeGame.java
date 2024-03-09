@@ -21,6 +21,8 @@ public class SnakeGame extends ApplicationAdapter {
     private static final float INITIAL_MOVE_DELAY = 0.2f;
     private static final float GOLD_FRUIT_DURATION = 10f;
     private static final float GOLD_FRUIT_SPAWN_CHANCE = 0.5f;
+
+    private int targetFrameRate;
     private ShapeRenderer shapeRenderer;
     private List<int[]> snake;
     private int[] food;
@@ -32,9 +34,12 @@ public class SnakeGame extends ApplicationAdapter {
     private int[] goldFruit;
     private float goldFruitTimer;
     private float elapsedTime = 0f;
-
     private SpriteBatch batch;
     private BitmapFont font;
+
+    public SnakeGame(int targetFrameRate) {
+        this.targetFrameRate = targetFrameRate;
+    }
 
     @Override
     public void create() {
@@ -181,16 +186,13 @@ public class SnakeGame extends ApplicationAdapter {
         // Update elapsed time
         elapsedTime += Gdx.graphics.getDeltaTime();
 
-        // Calculate interpolation factor
-        float interpolationFactor = Math.min(elapsedTime / moveDelay, 1f);
-
         // Clear the screen
         Gdx.gl.glClearColor(0.5f, 0.5f, 0.5f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
-        // Draw grid background
+        // Draw a grid background
         shapeRenderer.setColor(Color.BLACK);
         shapeRenderer.rect(0, 0, GRID_SIZE * CELL_SIZE, GRID_SIZE * CELL_SIZE);
 
@@ -221,8 +223,16 @@ public class SnakeGame extends ApplicationAdapter {
                 }
             }
 
-            float interpolatedX = startX + (endX - startX) * interpolationFactor;
-            float interpolatedY = startY + (endY - startY) * interpolationFactor;
+            // Calculate an interpolation factor based on elapsed time
+            float interpolationFactor = Math.min(elapsedTime / moveDelay, 1f);
+
+            // Calculate the distance to move based on the interpolation factor
+            float distanceX = (endX - startX) * interpolationFactor;
+            float distanceY = (endY - startY) * interpolationFactor;
+
+            // Calculate the interpolated position
+            float interpolatedX = startX + distanceX;
+            float interpolatedY = startY + distanceY;
 
             shapeRenderer.rect(interpolatedX % (GRID_SIZE * CELL_SIZE), interpolatedY % (GRID_SIZE * CELL_SIZE), CELL_SIZE, CELL_SIZE);
         }
