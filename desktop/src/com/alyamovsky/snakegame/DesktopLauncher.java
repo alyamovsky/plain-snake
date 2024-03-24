@@ -11,6 +11,6 @@ public class DesktopLauncher {
 		config.setForegroundFPS(TARGET_FRAMERATE);
 		config.useVsync(true);
 		config.setTitle("Shake");
-		new Lwjgl3Application(new SnakeGame(TARGET_FRAMERATE), config);
+		new Lwjgl3Application(new SnakeGame(), config);
 	}
 }
