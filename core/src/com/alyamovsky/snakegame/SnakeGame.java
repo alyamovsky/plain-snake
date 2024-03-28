@@ -26,7 +26,9 @@ public class SnakeGame extends ApplicationAdapter {
     private float elapsedTime = 0f;
     private SpriteBatch batch;
     private BitmapFont font;
-    float speed = 6; // cells per second
+    float speed = 4; // cells per second
+
+    private int time = 0;
 
     @Override
     public void create() {
@@ -50,8 +52,6 @@ public class SnakeGame extends ApplicationAdapter {
     }
 
     private void moveSnake() {
-
-
         try {
             snake.move(direction);
         } catch (IllegalArgumentException e) {
@@ -76,19 +76,15 @@ public class SnakeGame extends ApplicationAdapter {
             direction = Snake.DIRECTION_RIGHT;
         }
 
-        float delta = Gdx.graphics.getDeltaTime();
-        elapsedTime += delta;
-
-        if (elapsedTime >= 1 / speed) {
-            elapsedTime = 0;
+        executeGameLogic(() -> {
             moveSnake();
+            time += 1;
             if (food.equals(snake.getHead())) {
                 snake.eat(food);
                 score += 1;
                 spawnFood();
             }
-        }
-
+        });
 
         // Clear the screen
         Gdx.gl.glClearColor(0.5f, 0.5f, 0.5f, 1);
@@ -116,11 +112,12 @@ public class SnakeGame extends ApplicationAdapter {
 
         shapeRenderer.end();
 
-        // Draw score, level, and snake size
         batch.begin();
         font.draw(batch, "Score: " + score, 10, Gdx.graphics.getHeight() - 10);
         font.draw(batch, "Level: " + level, 10, Gdx.graphics.getHeight() - 30);
         font.draw(batch, "Snake Size: " + snake.getSize(), 10, Gdx.graphics.getHeight() - 50);
+
+        font.draw(batch, "Time: " + time, 150, Gdx.app.getGraphics().getHeight() - 10);
         batch.end();
     }
 
@@ -129,5 +126,16 @@ public class SnakeGame extends ApplicationAdapter {
         shapeRenderer.dispose();
         batch.dispose();
         font.dispose();
+    }
+
+    private void executeGameLogic(Runnable gameAction) {
+        float delta = Gdx.graphics.getDeltaTime();
+        elapsedTime += delta;
+        //System.out.println("Delta: " + delta + ", Elapsed Time: " + elapsedTime + ", Speed: " + speed + ", Time: " + time);
+
+        if (elapsedTime >= 1 / speed) {
+            elapsedTime = 0;
+            gameAction.run();
+        }
     }
 }

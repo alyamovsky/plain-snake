@@ -40,16 +40,14 @@ public class Snake {
         return false;
     }
 
-    public Snake eat(Fruit fruit) {
+    public void eat(Fruit fruit) {
         Segment last = segments.get(segments.size() - 1);
         if (fruit.getGrowthImpact() == Fruit.GROWTH_IMPACT_GROW) {
             segments.add(new Segment(last.x, last.y));
         }
-
-        return this;
     }
 
-    public Snake move(int direction) {
+    public void move(int direction) {
         Segment head = this.getHead().clone();
         int currentX = head.x;
         int currentY = head.y;
@@ -71,20 +69,10 @@ public class Snake {
                 throw new IllegalArgumentException("Invalid direction");
         }
 
-        if (currentX >= gridSize) {
-            currentX = 0;
-        } else if (currentX < 0) {
-            currentX = gridSize - 1;
-        }
-        if (currentY >= gridSize) {
-            currentY = 0;
-        } else if (currentY < 0) {
-            currentY = gridSize - 1;
-        }
+        // Check if snake is out of bounds
+        currentX = Math.floorMod(currentX, gridSize);
+        currentY = Math.floorMod(currentY, gridSize);
 
-
-        System.out.println("currentX: " + currentX);
-        System.out.println("currentY: " + currentY);
         segments.add(0, new Segment(currentX, currentY));
         segments.remove(this.getTail());
 
@@ -96,8 +84,6 @@ public class Snake {
                 throw new IllegalStateException("Snake bites itself");
             }
         }
-
-        return this;
     }
 
     public int getSize() {
