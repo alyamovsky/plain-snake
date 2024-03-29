@@ -26,7 +26,13 @@ public class SnakeGame extends ApplicationAdapter {
     private float elapsedTime = 0f;
     private SpriteBatch batch;
     private BitmapFont font;
-    float speed = 4; // cells per second
+    float speed = 8; // cells per second
+
+    Runtime runtime = Runtime.getRuntime();
+
+    Random random = new Random();
+
+    MemoryUsageInfo memoryUsage = new MemoryUsageInfo();
 
     private int time = 0;
 
@@ -47,7 +53,6 @@ public class SnakeGame extends ApplicationAdapter {
 
     private void spawnFood() {
         food = null;
-        Random random = new Random();
         food = new RegularFruit(random.nextInt(GRID_SIZE), random.nextInt(GRID_SIZE));
     }
 
@@ -112,12 +117,18 @@ public class SnakeGame extends ApplicationAdapter {
 
         shapeRenderer.end();
 
+        memoryUsage = getCurrentMemoryUsage();
         batch.begin();
         font.draw(batch, "Score: " + score, 10, Gdx.graphics.getHeight() - 10);
         font.draw(batch, "Level: " + level, 10, Gdx.graphics.getHeight() - 30);
         font.draw(batch, "Snake Size: " + snake.getSize(), 10, Gdx.graphics.getHeight() - 50);
 
         font.draw(batch, "Time: " + time, 150, Gdx.app.getGraphics().getHeight() - 10);
+
+        font.draw(batch, "Used Memory: " + memoryUsage.getUsedMemoryMB() + " MB", 300, Gdx.graphics.getHeight() - 10);
+        font.draw(batch, "Total Memory: " + memoryUsage.getTotalMemoryMB() + " MB", 300, Gdx.graphics.getHeight() - 30);
+        font.draw(batch, "Max Memory: " + memoryUsage.getMaxMemoryMB() + " MB", 300, Gdx.graphics.getHeight() - 50);
+
         batch.end();
     }
 
@@ -131,11 +142,56 @@ public class SnakeGame extends ApplicationAdapter {
     private void executeGameLogic(Runnable gameAction) {
         float delta = Gdx.graphics.getDeltaTime();
         elapsedTime += delta;
-        //System.out.println("Delta: " + delta + ", Elapsed Time: " + elapsedTime + ", Speed: " + speed + ", Time: " + time);
 
         if (elapsedTime >= 1 / speed) {
             elapsedTime = 0;
             gameAction.run();
+        }
+    }
+
+    public MemoryUsageInfo getCurrentMemoryUsage() {
+        long totalMemory = runtime.totalMemory();
+        long freeMemory = runtime.freeMemory();
+        long usedMemory = totalMemory - freeMemory;
+        long maxMemory = runtime.maxMemory();
+
+        // Formatting the memory usage to two decimal places
+        float usedMemoryInMB = ((int) ((usedMemory / (1024f * 1024f)) * 100)) / 100f;
+        float totalMemoryInMB = ((int) ((totalMemory / (1024f * 1024f)) * 100)) / 100f;
+        float maxMemoryInMB = ((int) ((maxMemory / (1024f * 1024f)) * 100)) / 100f;
+
+
+        // Returning the memory usage info as a new instance of MemoryUsageInfo
+        return memoryUsage.update(usedMemoryInMB, totalMemoryInMB, maxMemoryInMB);
+    }
+
+    public static class MemoryUsageInfo {
+        private float usedMemoryMB;
+        private float totalMemoryMB;
+        private float maxMemoryMB;
+
+        public MemoryUsageInfo() {
+        }
+
+        public MemoryUsageInfo update(float usedMemoryMB, float totalMemoryMB, float maxMemoryMB) {
+            this.usedMemoryMB = usedMemoryMB;
+            this.totalMemoryMB = totalMemoryMB;
+            this.maxMemoryMB = maxMemoryMB;
+
+            return this;
+        }
+
+        // Getters
+        public float getUsedMemoryMB() {
+            return usedMemoryMB;
+        }
+
+        public float getTotalMemoryMB() {
+            return totalMemoryMB;
+        }
+
+        public float getMaxMemoryMB() {
+            return maxMemoryMB;
         }
     }
 }
