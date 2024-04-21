@@ -26,15 +26,19 @@ public class SnakeGame extends ApplicationAdapter {
     private float elapsedTime = 0f;
     private SpriteBatch batch;
     private BitmapFont font;
-    float speed = 8; // cells per second
-
+    private float speed = 4; // cells per second
+    private int targetFramerate;
     Runtime runtime = Runtime.getRuntime();
 
     Random random = new Random();
 
     MemoryUsageInfo memoryUsage = new MemoryUsageInfo();
 
-    private int time = 0;
+    private int cycles;
+
+    public SnakeGame(int targetFramerate) {
+        this.targetFramerate = targetFramerate;
+    }
 
     @Override
     public void create() {
@@ -83,7 +87,6 @@ public class SnakeGame extends ApplicationAdapter {
 
         executeGameLogic(() -> {
             moveSnake();
-            time += 1;
             if (food.equals(snake.getHead())) {
                 snake.eat(food);
                 score += 1;
@@ -106,13 +109,54 @@ public class SnakeGame extends ApplicationAdapter {
         shapeRenderer.rect(food.getX() * CELL_SIZE, food.getY() * CELL_SIZE, CELL_SIZE, CELL_SIZE);
 
         shapeRenderer.setColor(Color.GREEN);
-        for (int i = 0; i < snake.getSize(); i++) {
+        int snakeSize = snake.getSize();
+        for (int i = 0; i < snakeSize; i++) {
             Snake.Segment part = snake.getSegment(i);
 
             float x = part.getX() * CELL_SIZE;
             float y = part.getY() * CELL_SIZE;
+            float width = CELL_SIZE;
+            float height = CELL_SIZE;
+            if (i == 0) {
+                switch (direction) {
+                    case Snake.DIRECTION_RIGHT:
+                        width += CELL_SIZE * currentCycleProgress();
+                        break;
+                    case Snake.DIRECTION_UP:
+                        height += CELL_SIZE * currentCycleProgress();
+                        break;
+                    case Snake.DIRECTION_LEFT:
+                        x -= CELL_SIZE * currentCycleProgress();
+                        width += CELL_SIZE * currentCycleProgress();
+                        break;
+                    case Snake.DIRECTION_DOWN:
+                        y -= CELL_SIZE * currentCycleProgress();
+                        height += CELL_SIZE * currentCycleProgress();
+                        break;
+                }
+            }
+            if (i == snakeSize - 1) {
+                switch (direction) {
+                    case Snake.DIRECTION_RIGHT:
+                        width -= CELL_SIZE * currentCycleProgress();
+                        x += CELL_SIZE * currentCycleProgress();
+                        break;
+                    case Snake.DIRECTION_UP:
+                        height -= CELL_SIZE * currentCycleProgress();
+                        y += CELL_SIZE * currentCycleProgress();
+                        break;
+                    case Snake.DIRECTION_LEFT:
+                        x -= CELL_SIZE * currentCycleProgress();
+                        width -= CELL_SIZE * currentCycleProgress();
+                        break;
+                    case Snake.DIRECTION_DOWN:
+                        y -= CELL_SIZE * currentCycleProgress();
+                        height -= CELL_SIZE * currentCycleProgress();
+                        break;
+                }
+            }
 
-            shapeRenderer.rect(x, y, CELL_SIZE, CELL_SIZE);
+            shapeRenderer.rect(x, y, width, height);
         }
 
         shapeRenderer.end();
@@ -123,7 +167,7 @@ public class SnakeGame extends ApplicationAdapter {
         font.draw(batch, "Level: " + level, 10, Gdx.graphics.getHeight() - 30);
         font.draw(batch, "Snake Size: " + snake.getSize(), 10, Gdx.graphics.getHeight() - 50);
 
-        font.draw(batch, "Time: " + time, 150, Gdx.app.getGraphics().getHeight() - 10);
+        font.draw(batch, "Cycles: " + cycles, 150, Gdx.app.getGraphics().getHeight() - 10);
 
         font.draw(batch, "Used Memory: " + memoryUsage.getUsedMemoryMB() + " MB", 300, Gdx.graphics.getHeight() - 10);
         font.draw(batch, "Total Memory: " + memoryUsage.getTotalMemoryMB() + " MB", 300, Gdx.graphics.getHeight() - 30);
@@ -141,15 +185,29 @@ public class SnakeGame extends ApplicationAdapter {
 
     private void executeGameLogic(Runnable gameAction) {
         float delta = Gdx.graphics.getDeltaTime();
-        elapsedTime += delta;
 
-        if (elapsedTime >= 1 / speed) {
+        if (isNextCycle(delta)) {
             elapsedTime = 0;
+            cycles += 1;
             gameAction.run();
         }
     }
 
-    public MemoryUsageInfo getCurrentMemoryUsage() {
+    private boolean isNextCycle(float delta) {
+        elapsedTime += delta;
+        if (elapsedTime >= 1 / speed) {
+            elapsedTime = 0;
+            return true;
+        }
+
+        return false;
+    }
+
+    private float currentCycleProgress() {
+        return elapsedTime / (1 / speed);
+    }
+
+    private MemoryUsageInfo getCurrentMemoryUsage() {
         long totalMemory = runtime.totalMemory();
         long freeMemory = runtime.freeMemory();
         long usedMemory = totalMemory - freeMemory;
